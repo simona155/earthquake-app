@@ -38,7 +38,7 @@ git clone https://github.com/simona155/earthquake-app.git
 - cd earthquake-frontend
 - npm install
 - npm run dev
-- 
+  
 ---
 
 ## 6. How the Application Works
