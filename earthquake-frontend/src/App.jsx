@@ -1,19 +1,16 @@
 import { useEffect, useState } from "react";
-import Table from "react-bootstrap/Table";
-import Button from "react-bootstrap/Button";
-import Spinner from "react-bootstrap/Spinner";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 function App() {
   const [earthquakes, setEarthquakes] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-
-      const res = await fetch(
-        "http://localhost:8080/api/earthquakes"
-      );
+      const res = await fetch("http://localhost:8080/api/earthquakes", {
+        cache: "no-store",
+      });
 
       const data = await res.json();
       setEarthquakes(data);
@@ -24,56 +21,108 @@ function App() {
     }
   };
 
+  const fetchNewData = async () => {
+    setLoading(true);
+    await fetch("http://localhost:8080/api/earthquakes/fetch", {
+      cache: "no-store",
+    });
+    await fetchData();
+  };
+
+  const deleteEarthquake = async (id) => {
+    await fetch(`http://localhost:8080/api/earthquakes/${id}`, {
+      method: "DELETE",
+    });
+
+    setEarthquakes((prev) => prev.filter((eq) => eq.id !== id));
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
 
   return (
     <div className="container mt-4">
-      <h1 className="text-center mb-4">
-        🌍 Earthquake Monitor
-      </h1>
 
-      <div className="text-center mb-3">
-        <Button onClick={fetchData}>
-          Refresh Data
-        </Button>
+      
+      <div className="text-center mb-4">
+        <h2 className="fw-bold">Earthquake Monitor</h2>
+      
       </div>
 
+      
+      <div className="d-flex gap-2 mb-3 justify-content-center">
+        <button className="btn btn-success" onClick={fetchNewData}>
+          Fetch Latest
+        </button>
+
+      </div>
+
+  
       {loading ? (
         <div className="text-center">
-          <Spinner animation="border" />
+          <div className="spinner-border text-primary" role="status"></div>
+          <p className="mt-2">Loading earthquakes...</p>
         </div>
       ) : (
-        <Table striped bordered hover>
-          <thead>
-            <tr>
-              <th>Magnitude</th>
-              <th>Place</th>
-              <th>Time</th>
-            </tr>
-          </thead>
+        <div className="table-responsive">
+          <table className="table table-striped table-hover align-middle">
 
-          <tbody>
-            {earthquakes.length === 0 ? (
+            <thead className="table-dark">
               <tr>
-                <td colSpan="3" className="text-center">
-                  No data available. Click Refresh.
-                </td>
+                <th>ID</th>
+                <th>Magnitude</th>
+                <th>Place</th>
+                <th>Title</th>
+                <th>Time</th>
+                <th>Action</th>
               </tr>
-            ) : (
-              earthquakes.map((eq) => (
-                <tr key={eq.id}>
-                  <td>{eq.magnitude}</td>
-                  <td>{eq.place}</td>
-                  <td>
-                    {new Date(eq.time).toLocaleString()}
+            </thead>
+
+            <tbody>
+              {earthquakes.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="text-center text-muted">
+                    No earthquake data available
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </Table>
+              ) : (
+                earthquakes.map((eq) => (
+                  <tr key={eq.id}>
+                    <td>{eq.id}</td>
+
+                    <td>
+                      <span
+                        className={`badge ${
+                          eq.magnitude > 4
+                            ? "bg-danger"
+                            : eq.magnitude > 2.5
+                            ? "bg-warning text-dark"
+                            : "bg-success"
+                        }`}
+                      >
+                        {eq.magnitude}
+                      </span>
+                    </td>
+
+                    <td>{eq.place}</td>
+                    <td>{eq.title}</td>
+                    <td>{new Date(eq.time).toLocaleString()}</td>
+
+                    <td>
+                      <button
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => deleteEarthquake(eq.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
